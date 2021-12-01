@@ -28,16 +28,43 @@
 
 import UIKit
 
+//倒入依赖库
+import CoreMedia
+import CoreML
+import Vision
+
 class ViewController: UIViewController {
   
-  @IBOutlet var imageView: UIImageView!
+  @IBOutlet var imageView: UIImageView! //图片
   @IBOutlet var cameraButton: UIButton!
   @IBOutlet var photoLibraryButton: UIButton!
   @IBOutlet var resultsView: UIView!
-  @IBOutlet var resultsLabel: UILabel!
+  @IBOutlet var resultsLabel: UILabel! //结果显示的地方
   @IBOutlet var resultsConstraint: NSLayoutConstraint!
 
   var firstTime = true
+    
+    // 增加一个classification request
+    lazy var classificationRequest: VNCoreMLRequest = {
+        do{
+            // 作业 1
+            // let classifier = try snack1(configuration: MLModelConfiguration())
+            // 作业 2
+            let classifier = try snack2(configuration: MLModelConfiguration())
+            
+            let model = try VNCoreMLModel(for: classifier.model)
+            let request = VNCoreMLRequest(model: model, completionHandler: {
+                [weak self] request,error in
+                self?.processObservations(for: request, error: error)
+            })
+            request.imageCropAndScaleOption = .centerCrop
+            return request
+            
+            
+        } catch {
+            fatalError("Failed to create request")
+        }
+    }()
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -45,7 +72,7 @@ class ViewController: UIViewController {
     resultsView.alpha = 0
     resultsLabel.text = "choose or take a photo"
   }
-
+	
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
 
@@ -56,11 +83,11 @@ class ViewController: UIViewController {
     }
   }
   
-  @IBAction func takePicture() {
+  @IBAction func takePicture() { // 拍照
     presentPhotoPicker(sourceType: .camera)
   }
 
-  @IBAction func choosePhoto() {
+  @IBAction func choosePhoto() { // 选择图片
     presentPhotoPicker(sourceType: .photoLibrary)
   }
 
@@ -82,7 +109,7 @@ class ViewController: UIViewController {
                    initialSpringVelocity: 0.6,
                    options: .beginFromCurrentState,
                    animations: {
-      self.resultsView.alpha = 1
+        self.resultsView.alpha = 1
       self.resultsConstraint.constant = -10
       self.view.layoutIfNeeded()
     },
@@ -95,7 +122,16 @@ class ViewController: UIViewController {
     }
   }
 
-  func classify(image: UIImage) {
+  func classify(image: UIImage) { // 图片格式的转化
+      DispatchQueue.global(qos: .userInitiated).async {
+      //DispatchQueue.main.async {
+          let handler = VNImageRequestHandler(cgImage: image.cgImage!)
+          do {
+              try handler.perform([self.classificationRequest])
+          } catch {
+              print("Failed to perform classification: \(error)")
+          }
+      }
   }
 }
 
@@ -108,4 +144,31 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
 
     classify(image: image)
   }
+}
+
+extension ViewController {
+    func processObservations(for request: VNRequest, error: Error?) {
+        if let results = request.results as? [VNClassificationObservation] {
+            if results.isEmpty {
+                self.resultsLabel.text = "没找到"
+            } else {
+                let result = results[0].identifier
+                let confidence = results[0].confidence
+                DispatchQueue.main.async {
+                    //self.resultsView.alpha = 0
+                    if confidence > 0.8{
+                        self.resultsLabel.text = result + String(format: "  %.1f%%", confidence * 100)
+                    }else{
+                        self.resultsLabel.text = "我不确定"
+                    }
+                    self.showResultsView()
+                }
+                print(result)
+            }
+        } else if let error = error {
+            self.resultsLabel.text = "Error: \(error.localizedDescription)"
+        } else {
+            self.resultsLabel.text = "???"
+        }
+    }
 }

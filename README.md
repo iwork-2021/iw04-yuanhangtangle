@@ -1,36 +1,17 @@
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-f059dc9a6f8d3a56e377f745f24479a46679e63a5d9fe6f495e02850cd0d8118.svg)](https://classroom.github.com/online_ide?assignment_repo_id=6480245&assignment_repo_type=AssignmentRepo)
-# iw04
-iOS assignment 4: Image Classification App.
+# IW04
 
-作业 4-1 
-  请基于模板工程(starter/HealthySnacks)，运用CoreML开发一个利用卷积神经网络分类snacks的App
+> @StuID：181840211
+>
+> @Author：汤远航
 
-功能要求如下：
+## 实现思路
 
-1. 通过CreateML基于给定snacks数据集训练图像分类模型
-2. 可针对拍照和相册中选择的图片利用训练好的模型进行snacks分类
-3. 在屏幕上展示神经网络模型的分类结果
+1. CoreM L实现模型的训练, 作业 1 可以直接使用给定的数据集, 作业 2 则需要对数据集进行简单的修改。使用其中的水果和蔬菜等食品共 10 种作为 healthy 样本, 其他的食品共 10 种作为 unhealthy 样本. 修改通过Python代码实现, 写于 `dir_tools.ipynb` 中
+2. ViewController 中, 使用 Dispatch.global 将模型的预测至于后台进行, 通过 Dispatch.main 实现前台label的更新
+3. 通过 UIimage.cgImage 获得合适的模型输入图像格式
+4. OOD检测通过MSP方法实现, softmax最大预测信度超过 0.8 的样本进行预测, 小于 0.8 的样本返回 “我不确定”
 
-非功能需求如下：
+## 结果
 
-1. 面对不属于数据集内给定snacks类别以外的图片，或模型本身把握不准的图片，给出“我不确定”的判断
-
-
-作业 4-2
-  请基于模板工程(starter/HealthySnacks)，运用CoreML开发一个利用卷积神经网络分类健康和非健康snacks的App
-
-功能要求如下：
-
-1. 改造snacks数据集，形成可供训练分类健康snacks模型的数据集
-1. 通过CreateML基于改造的数据集训练图像分类模型
-2. 可针对拍照和相册中选择的图片利用训练好的模型进行健康/非健康snacks的分类
-3. 在屏幕上展示神经网络模型的分类结果
-
-非功能需求如下：
-
-1. 面对不属于数据集内给定snacks类别以外的图片，或模型本身把握不准的图片，给出“我不确定”的判断
-
-作业 4-3 （无需提交结果，自学）
-
-通过train_model.ipynb，学习PyTorch训练模型流程，以及如何将PyTorch模型转换为mlmodel的格式
-
+1. 在 IOS15 的 Iphone6s 上进行了测试, 模型预测较慢, 往往需要图片显示后才显示预测结果, 这印证了将其至于后台处理的优势
+2. MSP方法表现在作业 1 上良好, 但是在作业 2 上表现不佳
